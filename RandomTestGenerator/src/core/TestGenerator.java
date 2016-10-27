@@ -51,6 +51,7 @@ public class TestGenerator {
 		String[] extension = { "java" };
 		Collection<File> javaFiles = FileUtils.listFiles(dir, extension, true);
 		
+		//TODO implement time limit
 		long startTime = System.currentTimeMillis();
 		for (File file : javaFiles) {
 			//Get original file contents
@@ -75,7 +76,6 @@ public class TestGenerator {
 	 */
 	private static void generateTestCases(String className, String testTemplate, String originalContent) throws Exception {
 		/**
-		Do until time limit expires:
 			• Create a new sequence
 				• Randomly pick a method call m(T1...Tk)/Tret
 				• For each input parameter of type Ti, randomly pick a sequence Si from the value pool that constructs an object vi of type Ti
@@ -95,8 +95,6 @@ public class TestGenerator {
 		boolean processed = false;
 		
 		while(hasNext()) {
-			processed = true;
-			
 			Method method = getNext();
 			
 			//TODO create a Sequence object (start with constructors? after that, primitive parameters? after that the rest?)
@@ -118,6 +116,7 @@ public class TestGenerator {
 
 //			System.out.println(method.toString());
 			currentType = MethodType.CONSTRUCTOR;
+			processed = true;
 		}
 		
 		if(processed) {

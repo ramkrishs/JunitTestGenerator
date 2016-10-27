@@ -18,23 +18,29 @@ public class Sequence {
 		statements.add(value);
 	}
 	
-	/*
 	public Sequence(Object type, List<Object> value) {
 		types = new ArrayList<Object>();
 		types.add(type);
 		
 		statements = new ArrayList<Object>();
-		statements.add(value);
+		statements.addAll(value);
 	}
 	
 	public Sequence(List<Object> type, Object value) {
+		types = new ArrayList<Object>();
+		types.addAll(type);
 		
+		statements = new ArrayList<Object>();
+		statements.add(value);
 	}
 	
 	public Sequence(List<Object> type, List<Object> value) {
+		types = new ArrayList<Object>();
+		types.addAll(type);
 		
+		statements = new ArrayList<Object>();
+		statements.addAll(value);
 	}
-	*/
 
 	public List<Object> getTypes() {
 		return types;

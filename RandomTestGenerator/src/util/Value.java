@@ -1,7 +1,6 @@
 package util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import model.Sequence;
@@ -20,37 +19,54 @@ public class Value {
 		pool.add(new Sequence(Integer.class, 0));
 		pool.add(new Sequence(Integer.class, 1));
 		
-		//TODO byte
+		//byte FIXME
+		pool.add(new Sequence(byte.class, 0));
+		pool.add(new Sequence(byte.class, 1));
+		pool.add(new Sequence(Byte.class, 0));
+		pool.add(new Sequence(Byte.class, 1));
 		
 		//short
+		pool.add(new Sequence(short.class, 0));
+		pool.add(new Sequence(short.class, 1));
+		pool.add(new Sequence(Short.class, 0));
+		pool.add(new Sequence(Short.class, 1));
 		
 		//long
+		pool.add(new Sequence(long.class, 0));
+		pool.add(new Sequence(long.class, 1));
+		pool.add(new Sequence(Long.class, 0));
+		pool.add(new Sequence(Long.class, 1));
 		
 		//float
+		pool.add(new Sequence(float.class, 0));
+		pool.add(new Sequence(float.class, 1));
+		pool.add(new Sequence(Float.class, 0));
+		pool.add(new Sequence(Float.class, 1));
 		
 		//double
+		pool.add(new Sequence(double.class, 0));
+		pool.add(new Sequence(double.class, 1));
+		pool.add(new Sequence(Double.class, 0));
+		pool.add(new Sequence(Double.class, 1));
 		
 		//boolean
+		pool.add(new Sequence(boolean.class, false));
+		pool.add(new Sequence(boolean.class, true));
+		pool.add(new Sequence(Boolean.class, false));
+		pool.add(new Sequence(Boolean.class, true));
 		
 		//char
+		pool.add(new Sequence(char.class, 'a'));
+		pool.add(new Sequence(char.class, 'b'));
+		pool.add(new Sequence(Character.class, 'a'));
+		pool.add(new Sequence(Character.class, 'b'));
 		
 		//String
-		pool.add(new Sequence(String.class, Arrays.asList("String s;", "s = \"hi\";")));	
+		pool.add(new Sequence(String.class, "hi"));
+		pool.add(new Sequence(String.class, "hello"));	
 		
 		//null
 		pool.add(new Sequence(Value.ANY_CLASS, null));	
 	}
 	
-	public static void main(String[] args) {
-		
-		for (Sequence sequence : pool) {
-			System.out.println("");
-			for (Object types : sequence.getTypes()) {
-				System.out.println(types);
-			}
-			for (Object types : sequence.getStatements()) {
-				System.out.println(types);
-			}
-		}
-	}
 }
