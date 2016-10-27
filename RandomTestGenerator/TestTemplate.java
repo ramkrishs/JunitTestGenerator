@@ -5,7 +5,6 @@ public class TestTemplate {
 
 	@Before
 	private void setUp() {
-		classA = new ClassA();
 	}
 
 }

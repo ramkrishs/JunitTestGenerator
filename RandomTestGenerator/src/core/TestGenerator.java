@@ -51,7 +51,7 @@ public class TestGenerator {
 		String[] extension = { "java" };
 		Collection<File> javaFiles = FileUtils.listFiles(dir, extension, true);
 		
-		
+		long startTime = System.currentTimeMillis();
 		for (File file : javaFiles) {
 			//Get original file contents
 			String originalContent = Util.readFile(file.getAbsolutePath());
@@ -61,6 +61,8 @@ public class TestGenerator {
 			
 			generateTestCases(className, testTemplate, originalContent);
 		}
+		
+		System.out.println("Executed in "+ (System.currentTimeMillis()-startTime) + "(ms)");
 	}
 	
 	/**
@@ -90,15 +92,13 @@ public class TestGenerator {
 		methods = identifyMethods(originalContent);
 		
 		//TODO Change to random method instead of all (for statement from 1 to size)
+		boolean processed = false;
 		
-//		while(hasNext()) {
-//			Method method = getNext();
-//			
-//		}
-		
-		long startTime = System.currentTimeMillis();
-		
-		for (Method method : methods) {
+		while(hasNext()) {
+			processed = true;
+			
+			Method method = getNext();
+			
 			//TODO create a Sequence object (start with constructors? after that, primitive parameters? after that the rest?)
 			//TODO check sequence against contracts
 			//FIXME remove (POSSIBLE CONTRACTS)
@@ -115,14 +115,14 @@ public class TestGenerator {
 			//else, create test case normally and pool
 			
 			testClass = generateTest(testClass, method);
+
+//			System.out.println(method.toString());
+			currentType = MethodType.CONSTRUCTOR;
 		}
 		
-		//Pool
-//		Value.pool;
-		
-		System.out.println(System.currentTimeMillis()-startTime + "ms");
-		
-		System.out.println(testClass+"\n\n\n\n\n");
+		if(processed) {
+			System.out.println(testClass+"\n\n\n\n\n");
+		}
 	}
 	
 	private static ArrayList<Method> identifyMethods(String content) {
@@ -278,12 +278,17 @@ public class TestGenerator {
 	}
 	
 	private static boolean hasNext() {
+		boolean hasNext = false;
 		
 		if(currentType == MethodType.CONSTRUCTOR) {
 			for (Method method : methods) {
 				if(method.getArgumentTypes() == null || method.getArgumentTypes().size() <= 0) {
-					return true;
+					hasNext = true;
+					break;
 				}
+			}
+			if(!hasNext) {
+				currentType = MethodType.PRIMITIVE;
 			}
 		}
 		
@@ -299,30 +304,70 @@ public class TestGenerator {
 					}
 				}
 				if(isPrimitive) {
-					return true;
+					hasNext = true;
+					break;
 				}
+			}
+			if(!hasNext) {
+				currentType = MethodType.COMPLEX;
 			}
 		}
 		
 		if(currentType == MethodType.COMPLEX) {
 			if(methods.size() > 0) {
-				return true;
+				hasNext = true;
 			}
 		}
 		
-		return false;
+		return hasNext;
 	}
 	
 	//TODO IMPLEMENT	
 	private static Method getNext() {
+		Method nextMethod = null;
 		
-		for (Method method : methods) {
-			
-		}
 		if(currentType == MethodType.CONSTRUCTOR) {
-			
+			for (Method method : methods) {
+				if(method.getArgumentTypes() == null || method.getArgumentTypes().size() <= 0) {
+					nextMethod = method;
+					break;
+				}
+			}
+			if(nextMethod == null) {
+				currentType = MethodType.PRIMITIVE;
+			}
 		}
 		
-		return new Method();
+		if(currentType == MethodType.PRIMITIVE) {
+			for (Method method : methods) {
+				boolean isPrimitive = true;
+				for (Integer key : method.getArgumentTypes().keySet()) {
+					Type type = method.getArgumentTypes().get(key);
+					
+					if(!Util.isPrimitive(type.toString())){
+						isPrimitive = false;
+						break;
+					}
+				}
+				if(isPrimitive) {
+					nextMethod = method;
+					break;
+				}
+			}
+			if(nextMethod == null) {
+				currentType = MethodType.COMPLEX;
+			}
+		}
+		
+		if(currentType == MethodType.COMPLEX) {
+			if(methods.size() > 0) {
+				nextMethod = methods.get(0);
+			}
+		}
+		
+		if(nextMethod != null) {
+			methods.remove(nextMethod);
+		}
+		return nextMethod;
 	}
 }

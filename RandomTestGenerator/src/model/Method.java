@@ -42,7 +42,9 @@ public class Method {
 		}
 		methodString += ")";
 		
-		methodString += "/" + returnType.toString();
+		if(returnType != null) {
+			methodString += "/" + returnType.toString();
+		}
 		
 		return methodString;
 	}

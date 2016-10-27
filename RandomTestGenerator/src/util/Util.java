@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 
 public class Util {
 	
-	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Google Drive\\workspace\\RandomTestGenerator\\GenericTree-master\\src\\main";
+	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\GenericTree-master\\src\\main";
 	
 	public static final String TEMPLATE = "TestTemplate.java";
 	
@@ -53,15 +53,20 @@ public class Util {
 	}
 
 	public static boolean isPrimitive(String typeString) {
+		boolean isPrimitive;
 		switch (typeString) {
 		case "int":
-			
-			break;
-
-		default:
-			break;
+		case "byte":
+		case "short":
+		case "long":
+		case "float":
+		case "double":
+		case "boolean":
+		case "char":
+		case "String": isPrimitive = true; break;
+		default: isPrimitive = false; break;
 		}
-		return false;
+		return isPrimitive;
 	}
 	
 	
