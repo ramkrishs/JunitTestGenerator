@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 
 public class Util {
 	
-	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\GenericTree-master\\src\\main";
+	public static final String ANALYSIS_DIR = "C:\\Users\\Ramakrishnan_sathyav\\Documents\\Coll work\\STVV\\JunitTestGenerator\\RandomTestGenerator\\cors-filter-master\\src\\main";
 	
 	public static final String TEMPLATE = "TestTemplate.java";
 	
