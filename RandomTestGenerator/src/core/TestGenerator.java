@@ -38,6 +38,7 @@ public class TestGenerator {
 	
 	private static MethodType currentType = MethodType.CONSTRUCTOR;
 	private static ArrayList<Method> methods;
+	private static int i = 0;
 	
 	public static void main(String args[]) throws Exception {
 		
@@ -57,8 +58,13 @@ public class TestGenerator {
 			//Get original file contents
 			String originalContent = Util.readFile(file.getAbsolutePath());
 			
+			if(!isClass(originalContent))
+				continue;
+			
 			//Get name of the file
 			String className = Util.getFileName(file);
+			
+			System.out.println(className);
 			
 			generateTestCases(className, testTemplate, originalContent);
 		}
@@ -114,7 +120,7 @@ public class TestGenerator {
 			
 			testClass = generateTest(testClass, method);
 
-//			System.out.println(method.toString());
+			System.out.println(++i + ":"+ method.toString());
 			currentType = MethodType.CONSTRUCTOR;
 			processed = true;
 		}
@@ -368,5 +374,17 @@ public class TestGenerator {
 			methods.remove(nextMethod);
 		}
 		return nextMethod;
+	}
+	
+	/**
+	 * Checks if the final represented by originalContent contains at least 1 class
+	 * @param originalContent
+	 * @return
+	 */
+	private static boolean isClass(String originalContent) {
+		
+		CompilationUnit unit = parseAST(originalContent);
+		
+		return ((unit.types() == null || unit.types().size() <= 0))?false:true;
 	}
 }
