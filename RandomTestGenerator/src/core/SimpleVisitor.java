@@ -11,7 +11,7 @@ import model.Method;
 public class SimpleVisitor extends ASTVisitor {
 	
 	private ArrayList<Method> methods = new ArrayList<Method>();
-
+	
 	public boolean visit(MethodDeclaration node) {
 		Method method = new Method();
 		

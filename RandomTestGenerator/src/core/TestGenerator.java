@@ -3,6 +3,9 @@ package core;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.AST;
@@ -38,7 +41,8 @@ public class TestGenerator {
 	
 	private static MethodType currentType = MethodType.CONSTRUCTOR;
 	private static ArrayList<Method> methods;
-	private static int i = 0;
+	private static int methodNumber = 0;
+	private static int invalidCount = 0;
 	
 	public static void main(String args[]) throws Exception {
 		
@@ -69,6 +73,7 @@ public class TestGenerator {
 			generateTestCases(className, testTemplate, originalContent);
 		}
 		
+		System.out.println("Invalid: "+invalidCount);
 		System.out.println("Executed in "+ (System.currentTimeMillis()-startTime) + "(ms)");
 	}
 	
@@ -120,13 +125,13 @@ public class TestGenerator {
 			
 			testClass = generateTest(testClass, method);
 
-			System.out.println(++i + ":"+ method.toString());
+			System.out.println(++methodNumber + ":"+ method.toString());
 			currentType = MethodType.CONSTRUCTOR;
 			processed = true;
 		}
 		
 		if(processed) {
-			System.out.println(testClass+"\n\n\n\n\n");
+//			System.out.println(testClass+"\n\n\n\n\n");
 		}
 	}
 	
@@ -136,7 +141,26 @@ public class TestGenerator {
 		SimpleVisitor visitor = new SimpleVisitor();
 		unit.accept(visitor);
 		
-		return visitor.getMethods();
+		ArrayList<Method> methods = visitor.getMethods();
+		
+		HashMap<String, Integer> map = new HashMap<>();
+		
+		for (Method method : methods) {
+			
+			if(method.getReturnType() != null && !"void".equals(method.getReturnType().toString())) {
+				String returnType = method.getReturnType().toString();
+				
+				if(map.containsKey(returnType)) {
+					invalidCount++;
+					map.put(returnType, map.get(returnType) + 1);
+				} else {
+					map.put(returnType, 1);
+				}
+			}
+			
+		}
+		
+		return methods;
 	}
 	
 	private static String generateTest(String content, Method method) throws Exception {
