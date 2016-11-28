@@ -66,23 +66,7 @@ public class ValuePool {
 		pool.add(new Sequence("String", "hello"));	
 	}
 	
-	public static Sequence getPrimitive(String type) {
-		Sequence possibleSequence = null;
-		
-		for (Sequence sequence : pool) {
-			for (Object typeGenerated : sequence.getTypes()) {
-				if (typeGenerated.toString().equals(type)) {
-					possibleSequence = sequence;
-					break;
-				}
-			}
-			if(possibleSequence!=null) break;
-		}
-		
-		return possibleSequence;
-	}
-	
-	//TODO
+	//TODO IMPLEMENT RANDOM?
 	public static Sequence getType(String type) {
 		Sequence possibleSequence = null;
 		

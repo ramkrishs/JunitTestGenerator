@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Util {
 	
@@ -13,6 +14,7 @@ public class Util {
 //	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\cors-filter-master\\src\\main";
 //	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\lookup-master\\src\\main";
 //	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\mp3agic-master\\src\\main";
+//	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\test";
 
 	public static final String TEMPLATE = "TestTemplate.java";
 	
@@ -179,9 +181,10 @@ public class Util {
 		75bz (75/25 = 3) (75-50=25)
 		76ca
 	*/	
-		for (int i = 1; i <= 780; i++) {
+		for (int i = 1; i <= 150; i++) {
 //			System.out.println(calculate(i));
-			getNextVarName();
+//			getNextVarName();
+			System.out.println(ThreadLocalRandom.current().nextInt(0, 4));
 		}
 	}
 

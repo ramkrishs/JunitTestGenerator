@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.AST;
@@ -70,7 +71,6 @@ public class TestGenerator {
 		String[] extension = { "java" };
 		Collection<File> javaFiles = FileUtils.listFiles(dir, extension, true);
 		
-		//TODO implement time limit
 		long startTime = System.currentTimeMillis();
 		for (File file : javaFiles) {
 			//Get original file contents
@@ -104,16 +104,6 @@ public class TestGenerator {
 	 * @throws Exception
 	 */
 	private static void generateTestCases(String className, String testTemplate, String originalContent) throws Exception {
-		/**
-			• Create a new sequence
-				• Randomly pick a method call m(T1...Tk)/Tret
-				• For each input parameter of type Ti, randomly pick a sequence Si from the value pool that constructs an object vi of type Ti
-				• Create new sequence Snew = S1; ... ; Sk ; Tret vnew = m(v1...vk);
-				• if Snew was previously created (lexically), go to first step
-			• Classify the new sequence Snew
-				• May discard, output as test case, or add to pool
-		*/
-		
 		//Generate test class
 		String testClass = generateClass(testTemplate, className, getPackage(originalContent));
 		
@@ -125,21 +115,6 @@ public class TestGenerator {
 		
 		while(hasNext()) {
 			Method method = getNext();
-			
-			//TODO create a Sequence object (start with constructors? after that, primitive parameters? after that the rest?)
-			//TODO check sequence against contracts
-			//FIXME remove (POSSIBLE CONTRACTS)
-//					• o.equals(o)==true
-//					• o.equals(o) throws no exception
-//					• o.hashCode() throws no exception
-//					• o.toString() throw no exception
-//					• No null inputs and:
-//						• Java: No NPEs
-//						• .NET: No NPEs, out-of-bounds, of illegal state exceptions
-			//if violated, create test case and add "contract-violating test case"
-			//else, check if the sequence is redundant
-			//if redundant, discard
-			//else, create test case normally and pool
 			
 			testClass = generateTest(testClass, method, className);
 			
@@ -206,8 +181,8 @@ public class TestGenerator {
 		Block block = ast.newBlock();
 		ListRewrite listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);		
 		
-//		1) CREATE THE TEST VARIABLE
-		//moved
+		//Save statements created in method body (might be saved to ValuePool)
+		List<Object> statements = new ArrayList<>();
 		
 //		2) CREATE METHOD INVOCATION
 		MethodInvocation methodInvocation = null;
@@ -219,7 +194,7 @@ public class TestGenerator {
 			classInvocation.setType(ast.newSimpleType(ast.newSimpleName(method.getName().toString())));
 		} else {
 			if("void".equals(method.getReturnType())) {
-				//no return //TODO check if needed
+				//no return
 				methodInvocation = ast.newMethodInvocation();
 				methodInvocation.setName(ast.newSimpleName(method.getName().toString()));
 				methodInvocation.setExpression(ast.newSimpleName(Util.lowerFirstChar(className)));
@@ -239,7 +214,7 @@ public class TestGenerator {
 			if(type.isPrimitiveType()) {
 				PrimitiveType primitiveType = (PrimitiveType) type;
 				
-				Sequence sequence = ValuePool.getPrimitive(primitiveType.toString());
+				Sequence sequence = ValuePool.getType(primitiveType.toString());
 				
 				String value = sequence.getStatements().get(0).toString();
 				
@@ -270,6 +245,7 @@ public class TestGenerator {
 				argumentVarStmt.setType(ast.newPrimitiveType(primitiveType.getPrimitiveTypeCode()));
 				
 				listRewrite.insertLast(argumentVarStmt, null);
+				statements.add(argumentVarStmt);
 				
 				if(methodInvocation != null) {
 					methodInvocation.arguments().add(ast.newSimpleName(argumentVarFrag.getName().toString()));
@@ -283,7 +259,7 @@ public class TestGenerator {
 			} else {
 				
 				if("String".equals(type.toString())) {
-					Sequence sequence = ValuePool.getPrimitive(type.toString());
+					Sequence sequence = ValuePool.getType(type.toString());
 					
 					String value = sequence.getStatements().get(0).toString();
 					
@@ -298,6 +274,7 @@ public class TestGenerator {
 					argumentVarStmt.setType(ast.newSimpleType(ast.newSimpleName(type.toString())));
 					
 					listRewrite.insertLast(argumentVarStmt, null);
+					statements.add(argumentVarStmt);
 					
 					if(methodInvocation != null) {
 						methodInvocation.arguments().add(ast.newSimpleName(argumentVarFrag.getName().toString()));
@@ -308,80 +285,71 @@ public class TestGenerator {
 					//Insert empty line before after parameter variables
 					Statement placeHolder = (Statement) rewriter.createStringPlaceholder("", ASTNode.EMPTY_STATEMENT);
 					listRewrite.insertLast(placeHolder, null);
-				}
-				
-				
-				//Generate type variable and include inside method call as parameter
-				Sequence sequence = ValuePool.getType(type.toString());
-				
-				if(sequence == null || sequence.getStatements() == null)
-					continue;
-				
-				for(int i = 0; i < sequence.getStatements().size(); i++) {
+				} else {
+					//Generate type variable and include inside method call as parameter
+					Sequence sequence = ValuePool.getType(type.toString());
 					
-					//if not the last
-					if(i < sequence.getStatements().size() - 1) {
-						listRewrite.insertLast((ASTNode) sequence.getStatements().get(i), null);
-					} else {
+					if(sequence == null || sequence.getStatements() == null)
+						continue;
+					
+					for(int i = 0; i < sequence.getStatements().size(); i++) {
 						
-						//check if last statement contains a variable declaration
-						if(sequence.getStatements().get(i).toString().contains("=")) {
+						//if not the last
+						if(i < sequence.getStatements().size() - 1) {
 							listRewrite.insertLast((ASTNode) sequence.getStatements().get(i), null);
+							statements.add((ASTNode) sequence.getStatements().get(i));
 						} else {
-							VariableDeclarationFragment argumentVarFrag = ast.newVariableDeclarationFragment();
-							argumentVarFrag.setName(ast.newSimpleName(Util.getNextVarName()));
-							argumentVarFrag.setInitializer((Expression) sequence.getStatements().get(i));
 							
-							VariableDeclarationStatement argumentVarStmt = ast.newVariableDeclarationStatement(argumentVarFrag);
-							if(type.isParameterizedType()){
-								ParameterizedType argType = (ParameterizedType) type;
-
-								SimpleName nameAux = ast.newSimpleName(argType.getType().toString());
-								SimpleType simpleTypeAux = ast.newSimpleType(nameAux);
+							//check if last statement contains a variable declaration
+							if(sequence.getStatements().get(i).toString().contains("=")) {
+								VariableDeclarationStatement sequenceDeclarationStmt = (VariableDeclarationStatement) sequence.getStatements().get(i);
+								listRewrite.insertLast(sequenceDeclarationStmt, null);
+								statements.add(sequenceDeclarationStmt);
 								
-								argumentVarStmt.setType(simpleTypeAux);
-							}
-							if(type.isSimpleType()) {
-								argumentVarStmt.setType(ast.newSimpleType(ast.newSimpleName(type.toString())));
-							}
-							
-							listRewrite.insertLast(argumentVarStmt, null);
-							
-							methodInvocation.arguments().add(ast.newSimpleName(argumentVarFrag.getName().toString()));
-							
-							if(methodInvocation != null) {
-								methodInvocation.arguments().add(ast.newSimpleName(argumentVarFrag.getName().toString()));
+								VariableDeclarationFragment sequenceVarName = (VariableDeclarationFragment) sequenceDeclarationStmt.fragments().get(0);
+								if(methodInvocation != null) {
+									methodInvocation.arguments().add(ast.newSimpleName(sequenceVarName.getName().toString()));
+								} else {
+									classInvocation.arguments().add(ast.newSimpleName(sequenceVarName.getName().toString()));
+								}
 							} else {
-								classInvocation.arguments().add(ast.newSimpleName(argumentVarFrag.getName().toString()));
+								VariableDeclarationFragment argumentVarFrag = ast.newVariableDeclarationFragment();
+								argumentVarFrag.setName(ast.newSimpleName(Util.getNextVarName()));
+								argumentVarFrag.setInitializer((Expression) sequence.getStatements().get(i));
+								
+								VariableDeclarationStatement argumentVarStmt = ast.newVariableDeclarationStatement(argumentVarFrag);
+								if(type.isParameterizedType()){
+									ParameterizedType argType = (ParameterizedType) type;
+
+									SimpleName nameAux = ast.newSimpleName(argType.getType().toString());
+									SimpleType simpleTypeAux = ast.newSimpleType(nameAux);
+									
+									argumentVarStmt.setType(simpleTypeAux);
+								}
+								if(type.isSimpleType()) {
+									argumentVarStmt.setType(ast.newSimpleType(ast.newSimpleName(type.toString())));
+								}
+								
+								listRewrite.insertLast(argumentVarStmt, null);
+								statements.add(argumentVarStmt);
+								
+								if(methodInvocation != null) {
+									methodInvocation.arguments().add(ast.newSimpleName(argumentVarFrag.getName().toString()));
+								} else {
+									classInvocation.arguments().add(ast.newSimpleName(argumentVarFrag.getName().toString()));
+								}
+								
+								//Insert empty line after generating parameter variables
+								Statement placeHolder = (Statement) rewriter.createStringPlaceholder("", ASTNode.EMPTY_STATEMENT);
+								listRewrite.insertLast(placeHolder, null);
 							}
-							
-							//Insert empty line after generating parameter variables
-							Statement placeHolder = (Statement) rewriter.createStringPlaceholder("", ASTNode.EMPTY_STATEMENT);
-							listRewrite.insertLast(placeHolder, null);
 						}
 					}
 				}
 			}
 		}
 		
-		/*
-		5) GENERATE TEST STATEMENT (if any)
-		if TESTVAR == null
-			add MI to body
-		else
-			if TESTVAR == primitive
-				save body statements to Value.pool
-				assign MI to TESTVAR
-				add statement to body
-			else
-				generate test statement based on one operation contract (instead of 'o', using TESTVAR)
-					• o.equals(o)==true
-					• o.equals(o) throws no exception
-					• o.hashCode() throws no exception
-					• o.toString() throw no exception
-				add test statement to body
-		 */
-
+//		5) GENERATE TEST STATEMENT (if any)
 		if(method.getReturnType() == null) {
 			//constructor
 			VariableDeclarationFragment testVarFrag = ast.newVariableDeclarationFragment();
@@ -398,15 +366,13 @@ public class TestGenerator {
 			
 			listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 			listRewrite.insertLast(testVarStmt, null);
+			statements.add(testVarStmt);
 			
 			//Insert empty line before operation contract
 			Statement placeHolder = (Statement) rewriter.createStringPlaceholder("", ASTNode.EMPTY_STATEMENT);
 			listRewrite.insertLast(placeHolder, null);
 			
-			MethodInvocation operationContract = ast.newMethodInvocation();
-			operationContract.setExpression(ast.newSimpleName(testVarFrag.getName().toString()));
-			operationContract.setName(ast.newSimpleName("equals"));
-			operationContract.arguments().add(ast.newSimpleName(testVarFrag.getName().toString()));
+			Expression operationContract = generateOperationContract(testVarFrag.getName().toString(), ast);	
 			
 			ExpressionStatement contractStmt = ast.newExpressionStatement(operationContract);
 			listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
@@ -446,71 +412,114 @@ public class TestGenerator {
 			
 			listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 			listRewrite.insertLast(testVarStmt, null);
+			statements.add(testVarStmt);
 			
-			//add operation contract
-			if(method.getReturnType().isSimpleType()) {
+			//add operation contract (primitive type cannot have)
+			if(method.getReturnType().isSimpleType() || method.getReturnType().isParameterizedType()) {
 				//Insert empty line before operation contract
 				Statement placeHolder = (Statement) rewriter.createStringPlaceholder("", ASTNode.EMPTY_STATEMENT);
 				listRewrite.insertLast(placeHolder, null);
 				
-				MethodInvocation operationContract = ast.newMethodInvocation();
-				operationContract.setExpression(ast.newSimpleName(testVarFrag.getName().toString()));
-				operationContract.setName(ast.newSimpleName("equals"));
-				operationContract.arguments().add(ast.newSimpleName(testVarFrag.getName().toString()));
+				Expression operationContract = generateOperationContract(testVarFrag.getName().toString(), ast);
 				
 				ExpressionStatement contractStmt = ast.newExpressionStatement(operationContract);
 				listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
 				listRewrite.insertLast(contractStmt, null);
 			}
+		} else {
+			//void methods should not contain variable or operation contract, just the call
+			ExpressionStatement expressionStatement = null;
+			if(methodInvocation != null) {
+				expressionStatement = ast.newExpressionStatement(methodInvocation);
+			} else {
+				expressionStatement = ast.newExpressionStatement(classInvocation);
+			}
+			listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
+			listRewrite.insertLast(expressionStatement, null);
+			statements.add(expressionStatement);
 		}
 		
-		
-		methodDeclaration.setBody(block);
-		
-//		4) SAVE BLOCK TO VALUE POOL //TODO TEST
+//		4) SAVE BLOCK TO VALUE POOL
 		if(method.getReturnType() == null) {
-			if(block.statements() != null && block.statements().size() > 0) {
-				List<Object> statements = new ArrayList<>();
-				for (Object statement : block.statements()) {
-					statements.add(statement);
-				}
+			if(statements.size() > 0) {
 				
 				List<Object> types = new ArrayList<>();
-				types.add(method.getReturnType());
+				types.add(method.getName().toString());
 				Sequence newSequence = new Sequence(types, statements);
 				
 				ValuePool.pool.add(newSequence);
 			}
 		} else {
-			if(!"void".equals(method.getReturnType().toString())
-					&& block.statements() != null && block.statements().size() > 0) {
-				List<Object> statements = new ArrayList<>();
-				for (Object statement : block.statements()) {
-					statements.add(statement);
-				}
+			if(!"void".equals(method.getReturnType().toString()) && statements.size() > 0) {
 				
 				List<Object> types = new ArrayList<>();
-				types.add(method.getReturnType());
+				types.add(method.getReturnType().toString());
 				Sequence newSequence = new Sequence(types, statements);
 				
 				ValuePool.pool.add(newSequence);
 			}
 		}
 		
+		methodDeclaration.setBody(block);
+		
 		//Insert method into the types of the compilation unit
 		TypeDeclaration typeDeclaration = (TypeDeclaration) unit.types().get(0);
 		listRewrite = rewriter.getListRewrite(typeDeclaration, TypeDeclaration.BODY_DECLARATIONS_PROPERTY);
-		listRewrite.insertAt(methodDeclaration, 2, null);
-		
-//		1. generate random method invocations
-		
-		
-//		2. generate random parameters
+		listRewrite.insertLast(methodDeclaration, null);
 		
 		TextEdit edits = rewriter.rewriteAST(document, null);
 		edits.apply(document);
-
+		
 		return document.get();
+	}
+	
+	private static MethodInvocation generateOperationContract(String varName, AST ast) {
+		MethodInvocation operationContract = null;
+		
+		int randomOC = ThreadLocalRandom.current().nextInt(0, 4);
+		
+		switch(randomOC) {
+//		• o.equals(o)==true / assertTrue(o.equals(o))
+			case 0: {
+				MethodInvocation equals = ast.newMethodInvocation();
+				equals.setExpression(ast.newSimpleName(varName));
+				equals.setName(ast.newSimpleName("equals"));
+				equals.arguments().add(ast.newSimpleName(varName));
+				
+				operationContract = ast.newMethodInvocation();
+				operationContract.setName(ast.newSimpleName("assertTrue"));
+				operationContract.arguments().add(equals);
+				
+				break;
+			}
+//		• o.equals(o) throws no exception
+			case 1: {
+				operationContract = ast.newMethodInvocation();
+				operationContract.setExpression(ast.newSimpleName(varName));
+				operationContract.setName(ast.newSimpleName("equals"));
+				operationContract.arguments().add(ast.newSimpleName(varName));
+				
+				break;
+			}
+//		• o.hashCode() throws no exception
+			case 2: {
+				operationContract = ast.newMethodInvocation();
+				operationContract.setExpression(ast.newSimpleName(varName));
+				operationContract.setName(ast.newSimpleName("hashCode"));
+				
+				break;
+			}
+//		• o.toString() throw no exception
+			case 3: {
+				operationContract = ast.newMethodInvocation();
+				operationContract.setExpression(ast.newSimpleName(varName));
+				operationContract.setName(ast.newSimpleName("toString"));
+				
+				break;
+			}
+		}
+		
+		return operationContract;
 	}
 	
 	private static String generateClass(String content, String className, String[] packageName) throws Exception {
@@ -647,7 +656,7 @@ public class TestGenerator {
 		return hasNext;
 	}
 	
-	//TODO IMPLEMENT	
+	//TODO IMPLEMENT RANDOM?
 	private static Method getNext() {
 		Method nextMethod = null;
 		
