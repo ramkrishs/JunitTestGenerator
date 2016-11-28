@@ -5,7 +5,7 @@ import java.util.List;
 
 import model.Sequence;
 
-public class Value {
+public class ValuePool {
 	
 	public static List<Sequence> pool = new ArrayList<Sequence>();
 	
@@ -62,11 +62,41 @@ public class Value {
 		pool.add(new Sequence(Character.class, 'b'));
 		
 		//String
-		pool.add(new Sequence(String.class, "hi"));
-		pool.add(new Sequence(String.class, "hello"));	
+		pool.add(new Sequence("String", "hi"));
+		pool.add(new Sequence("String", "hello"));	
+	}
+	
+	public static Sequence getPrimitive(String type) {
+		Sequence possibleSequence = null;
 		
-		//null
-		pool.add(new Sequence(Value.ANY_CLASS, null));	
+		for (Sequence sequence : pool) {
+			for (Object typeGenerated : sequence.getTypes()) {
+				if (typeGenerated.toString().equals(type)) {
+					possibleSequence = sequence;
+					break;
+				}
+			}
+			if(possibleSequence!=null) break;
+		}
+		
+		return possibleSequence;
+	}
+	
+	//TODO
+	public static Sequence getType(String type) {
+		Sequence possibleSequence = null;
+		
+		for (Sequence sequence : pool) {
+			for (Object typeGenerated : sequence.getTypes()) {
+				if (typeGenerated.toString().equals(type)) {
+					possibleSequence = sequence;
+					break;
+				}
+			}
+			if(possibleSequence!=null) break;
+		}
+		
+		return possibleSequence;
 	}
 	
 }
