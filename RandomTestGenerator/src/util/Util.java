@@ -12,13 +12,15 @@ public class Util {
 //	public static final String ANALYSIS_DIR = "C:\\Users\\Ramakrishnan_sathyav\\Documents\\Coll work\\STVV\\JunitTestGenerator\\RandomTestGenerator\\cors-filter-master\\src\\main";
 //	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\GenericTree-master\\src\\main";
 //	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\cors-filter-master\\src\\main";
-//	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\lookup-master\\src\\main";
+	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\lookup-master\\src\\main";
 //	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\mp3agic-master\\src\\main";
-	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\test";
+//	public static final String ANALYSIS_DIR = "C:\\Users\\Ronaldo\\Documents\\GitHub\\JunitTestGenerator\\RandomTestGenerator\\test";
 
 	public static final String TEMPLATE = "TestTemplate.java";
 	
 	public static int numOfVars = 0;
+	
+	public static char nextAvailable = 96;
 	
 	public static String readFile(String path) throws IOException {
 		
@@ -77,6 +79,15 @@ public class Util {
 		return isPrimitive;
 	}
 	
+	public static String getNextVar() {
+		return Character.toString(++nextAvailable);
+	}
+	
+	public static void resetVar() {
+		nextAvailable = 96;
+	}
+	
+	/*
 	public static String getNextVarName() {
 		String varName = "";
 		
@@ -142,6 +153,7 @@ public class Util {
 		
 		return varName;
 	}
+	*/
 	
 	private static String calculate(int number) {
 		return calculate(number, number);
