@@ -2,6 +2,7 @@ package util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import model.Sequence;
 
@@ -38,16 +39,16 @@ public class ValuePool {
 		pool.add(new Sequence(Long.class, 1));
 		
 		//float
-		pool.add(new Sequence(float.class, 0));
-		pool.add(new Sequence(float.class, 1));
-		pool.add(new Sequence(Float.class, 0));
-		pool.add(new Sequence(Float.class, 1));
+		pool.add(new Sequence(float.class, 0f));
+		pool.add(new Sequence(float.class, 1f));
+		pool.add(new Sequence(Float.class, 0f));
+		pool.add(new Sequence(Float.class, 1f));
 		
 		//double
-		pool.add(new Sequence(double.class, 0));
-		pool.add(new Sequence(double.class, 1));
-		pool.add(new Sequence(Double.class, 0));
-		pool.add(new Sequence(Double.class, 1));
+		pool.add(new Sequence(double.class, 0.0));
+		pool.add(new Sequence(double.class, 1.0));
+		pool.add(new Sequence(Double.class, 0.0));
+		pool.add(new Sequence(Double.class, 1.0));
 		
 		//boolean
 		pool.add(new Sequence(boolean.class, false));
@@ -66,21 +67,18 @@ public class ValuePool {
 		pool.add(new Sequence("String", "hello"));	
 	}
 	
-	//TODO IMPLEMENT RANDOM?
 	public static Sequence getType(String type) {
-		Sequence possibleSequence = null;
+		List<Sequence> possibleSequences = new ArrayList<>();
 		
 		for (Sequence sequence : pool) {
 			for (Object typeGenerated : sequence.getTypes()) {
 				if (typeGenerated.toString().equals(type)) {
-					possibleSequence = sequence;
-					break;
+					possibleSequences.add(sequence);
 				}
 			}
-			if(possibleSequence!=null) break;
 		}
 		
-		return possibleSequence;
+		return possibleSequences.get(ThreadLocalRandom.current().nextInt(0, possibleSequences.size()));
 	}
 	
 }
