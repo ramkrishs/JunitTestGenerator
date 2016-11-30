@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.io.FileUtils;
@@ -19,7 +20,6 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -56,11 +56,10 @@ public class TestGenerator {
 	
 	public static void main(String args[]) throws Exception {
 		
-//		Scanner scanner = new Scanner(System.in);
-//		System.out.print("Please input execution limit (in seconds): ");
-//		float executionLimit = scanner.nextFloat();
-		float executionLimit = 1000000000;
-//		scanner.close();
+		Scanner scanner = new Scanner(System.in);
+		System.out.print("Please input execution limit (in seconds): ");
+		float executionLimit = scanner.nextFloat();
+		scanner.close();
 		
 		//Template to populate
 		String testTemplate = Util.readFile(Util.TEMPLATE);
@@ -129,6 +128,23 @@ public class TestGenerator {
 		
 		if(processed) {
 			System.out.println(testClass+"\n\n\n\n\n");
+			//Generate file
+			
+			String originalPath = "";
+			for (String pathElement : getPackage(originalContent)) {
+				originalPath += "/"+pathElement;
+			}
+			File directory = new File("results\\src\\test\\java" + originalPath);
+			
+			File cleanDirectory = new File("results");
+			if(cleanDirectory.exists())
+				FileUtils.deleteDirectory(cleanDirectory);
+
+			directory.mkdirs();
+			
+			File file = new File(directory.getAbsolutePath()+"\\Test" + className + ".java");
+			FileUtils.writeStringToFile(file, testClass);
+			
 		}
 	}
 	
