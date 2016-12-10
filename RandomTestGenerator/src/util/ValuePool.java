@@ -20,7 +20,7 @@ public class ValuePool {
 		pool.add(new Sequence(Integer.class, 0));
 		pool.add(new Sequence(Integer.class, 1));
 		
-		//byte FIXME
+		//byte
 		pool.add(new Sequence(byte.class, 0));
 		pool.add(new Sequence(byte.class, 1));
 		pool.add(new Sequence(Byte.class, 0));
@@ -76,7 +76,7 @@ public class ValuePool {
 		pool.add(new Sequence(Integer.class, 0));
 		pool.add(new Sequence(Integer.class, 1));
 		
-		//byte FIXME
+		//byte
 		pool.add(new Sequence(byte.class, 0));
 		pool.add(new Sequence(byte.class, 1));
 		pool.add(new Sequence(Byte.class, 0));

@@ -82,7 +82,7 @@ public class TestGenerator {
 			//Get name of the file
 			String className = Util.getFileName(file);
 			
-			System.out.println(className);
+			//System.out.println(className);
 			
 			if(executionLimit*1000 > System.currentTimeMillis() - startTime) {
 				generateTestCases(className, testTemplate, originalContent);
@@ -110,7 +110,6 @@ public class TestGenerator {
 		//Identify methods
 		methods = identifyMethods(originalContent);
 		
-		//TODO Change to random method instead of all (for statement from 1 to size)
 		boolean processed = false;
 		
 		while(hasNext()) {
@@ -127,10 +126,12 @@ public class TestGenerator {
 		}
 		
 		if(processed) {
-			System.out.println(testClass+"\n\n\n\n\n");
+			//System.out.println(testClass+"\n\n\n\n\n");
 			//Generate file
 			
 			String originalPath = "";
+			
+			if(getPackage(originalContent) != null)
 			for (String pathElement : getPackage(originalContent)) {
 				originalPath += "/"+pathElement;
 			}
@@ -456,7 +457,7 @@ public class TestGenerator {
 			}
 		}
 		
-//		5) GENERATE TEST STATEMENT (if any)
+//		4) GENERATE TEST STATEMENT (if any)
 		if(method.getReturnType() == null) {
 			//constructor
 			VariableDeclarationFragment testVarFrag = ast.newVariableDeclarationFragment();
@@ -507,14 +508,19 @@ public class TestGenerator {
 			if(method.getReturnType().isParameterizedType()){
 				ParameterizedType returnType = (ParameterizedType) method.getReturnType();
 
-				SimpleName nameAux = ast.newSimpleName(returnType.getType().toString());
-				SimpleType simpleTypeAux = ast.newSimpleType(nameAux);
-				
-				testVarStmt.setType(simpleTypeAux);
+				if(method.getReturnType().toString().contains(".")) {
+					testVarStmt.setType(ast.newSimpleType(ast.newName(returnType.getType().toString())));
+				} else {
+					testVarStmt.setType(ast.newSimpleType(ast.newSimpleName(returnType.getType().toString())));
+				}
 			}
 			
 			if(method.getReturnType().isSimpleType()) {
-				testVarStmt.setType(ast.newSimpleType(ast.newSimpleName(method.getReturnType().toString())));
+				if(method.getReturnType().toString().contains(".")) {
+					testVarStmt.setType(ast.newSimpleType(ast.newName(method.getReturnType().toString())));
+				} else {
+					testVarStmt.setType(ast.newSimpleType(ast.newSimpleName(method.getReturnType().toString())));
+				}
 			}
 			
 			listRewrite = rewriter.getListRewrite(block, Block.STATEMENTS_PROPERTY);
@@ -546,7 +552,7 @@ public class TestGenerator {
 			statements.add(expressionStatement);
 		}
 		
-//		4) SAVE BLOCK TO VALUE POOL
+//		5) SAVE BLOCK TO VALUE POOL
 		if(method.getReturnType() == null) {
 			if(statements.size() > 0) {
 				
@@ -639,11 +645,13 @@ public class TestGenerator {
 		Document document = new Document(content);
 		
 		// PACKAGE
-		PackageDeclaration packageDeclaration = ast.newPackageDeclaration();
-		Name name = ast.newName(packageName);
-		packageDeclaration.setName(name);
-		
-		rewriter.set(unit, CompilationUnit.PACKAGE_PROPERTY, packageDeclaration, null);
+		if(packageName != null) {
+			PackageDeclaration packageDeclaration = ast.newPackageDeclaration();
+			Name name = ast.newName(packageName);
+			packageDeclaration.setName(name);
+			
+			rewriter.set(unit, CompilationUnit.PACKAGE_PROPERTY, packageDeclaration, null);
+		}
 		
 		// IMPORT - (NOT NEEDED FOR NOW)
 //		ImportDeclaration importDeclaration = ast.newImportDeclaration();
@@ -700,6 +708,9 @@ public class TestGenerator {
 	
 	private static String[] getPackage(String content) {
 		CompilationUnit unit = parseAST(content);
+		
+		if(unit.getPackage() == null)
+			return null;
 		
 		String packageString = unit.getPackage().toString();
 		String packageName = packageString.substring(8, packageString.length()-2);
@@ -763,7 +774,6 @@ public class TestGenerator {
 		return hasNext;
 	}
 	
-	//TODO IMPLEMENT RANDOM?
 	private static Method getNext() {
 		Method nextMethod = null;
 		
